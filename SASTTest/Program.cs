@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SASTTest.EF;
 
 namespace SASTTest
 {
@@ -8,6 +11,11 @@ namespace SASTTest
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var connectionString = builder.Configuration.GetConnectionString("VulnerabilityBuffetContextConnection") ?? throw new InvalidOperationException("Connection string 'VulnerabilityBuffetContextConnection' not found.");
+
+            builder.Services.AddDbContext<VulnerabilityBuffetContext>(options => options.UseSqlServer(connectionString));
+
+            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<VulnerabilityBuffetContext>();
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
