@@ -5424,7 +5424,7 @@ jQuery.event = {
 					event.rnamespace.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
-					event.data = handleObj.data;
+					event.data = handleObj.EF;
 
 					ret = ( ( jQuery.event.special[ handleObj.origType ] || {} ).handle ||
 						handleObj.handler ).apply( matched.elem, args );
@@ -9592,10 +9592,10 @@ jQuery.extend( {
 
 			// If data is available and should be processed, append data to url
 			if ( s.data && ( s.processData || typeof s.data === "string" ) ) {
-				cacheURL += ( rquery.test( cacheURL ) ? "&" : "?" ) + s.data;
+				cacheURL += ( rquery.test( cacheURL ) ? "&" : "?" ) + s.EF;
 
 				// #9682: remove data so that it's not used in an eventual retry
-				delete s.data;
+				delete s.EF;
 			}
 
 			// Add or update anti-cache param if needed
@@ -9771,7 +9771,7 @@ jQuery.extend( {
 				// If we have data, let's convert it
 				} else {
 					statusText = response.state;
-					success = response.data;
+					success = response.EF;
 					error = response.error;
 					isSuccess = !error;
 				}
