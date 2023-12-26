@@ -10,15 +10,16 @@ namespace SASTTest.Controllers;
 
 public class SqlController : Controller
 {
-    VulnerabilityBuffetContext _context;
+    VulnerabilityBuffetContext _dbContext;
     IConfiguration _config;
 
     private readonly string _awsAccessKey = "AKIAIOSFODNN7EXAMPLE";
     private readonly string _awsSecretKey = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+    private readonly string _connectionString = "Server=localhost\\SQL2019;Initial Catalog=VulnerabilityBuffet;Persist Security Info=False;User ID=ApplicationLogUser;Password=P@ssw0rd*;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;";
 
     public SqlController(VulnerabilityBuffetContext context, IConfiguration config)
     {
-        _context = context;
+        _dbContext = context;
         _config = config;
     }
 
@@ -46,7 +47,7 @@ public class SqlController : Controller
                                 WHERE FoodName LIKE '%" + foodName + "%' OR " +
                                 "FoodGroup LIKE '%" + foodGroup + "%'";
 
-        model.Foods = _context.ExecSQL<FoodDisplayView>(searchText);
+        model.Foods = _dbContext.ExecSQL<FoodDisplayView>(searchText);
         return View(model);
     }
 
@@ -70,7 +71,7 @@ public class SqlController : Controller
                                 WHERE FoodName LIKE '%" + foodName + "%' OR " +
         "FoodGroup LIKE '%' + @FoodGroup + '%'";
 
-        model.Foods = _context.ExecSQL<FoodDisplayView>(searchText, new SqlParameter("@FoodGroup", foodGroup));
+        model.Foods = _dbContext.ExecSQL<FoodDisplayView>(searchText, new SqlParameter("@FoodGroup", foodGroup));
         return View(model);
     }
 
@@ -78,6 +79,14 @@ public class SqlController : Controller
     [HttpGet]
     public IActionResult UnsafeModel_Concat(string foodName)
     {
+        var options = new CookieOptions();
+        options.Expires = DateTime.Now.AddYears(1);
+        options.HttpOnly = false;
+        options.SameSite = SameSiteMode.None;
+        options.IsEssential = true;
+
+        HttpContext.Response.Cookies.Append("FoodNameSearch", foodName, options);
+
         var model = new AccountUserViewModel();
         model.SearchText = foodName;
 
@@ -112,7 +121,7 @@ public class SqlController : Controller
         var model = new AccountUserViewModel();
         model.SearchText = foodName;
 
-        using (var connection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+        using (var connection = new SqlConnection("Server=localhost\\SQL2019;Initial Catalog=VulnerabilityBuffet;Persist Security Info=False;User ID=ApplicationLogUser;Password=P@ssw0rd*;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;"))
         {
             var command = connection.CreateCommand();
             command.CommandText = $"SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%{foodName}%'";
@@ -134,30 +143,30 @@ public class SqlController : Controller
         return View(model);
     }
 
+    [HttpGet]
+    [HttpPost]
     //SQL Injection vulnerability #4
     public IActionResult UnsafeModel_Format(string foodName)
     {
         var model = new AccountUserViewModel();
         model.SearchText = foodName;
 
-        using (var cn = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+        var cn = new SqlConnection(_connectionString);
+        var command = cn.CreateCommand();
+        command.CommandText = string.Format("SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%{0}%'", foodName);
+
+        cn.Open();
+
+        var foods = new List<FoodDisplayView>();
+
+        using (var reader = command.ExecuteReader())
         {
-            var command = cn.CreateCommand();
-            command.CommandText = string.Format("SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%{0}%'", foodName);
-
-            cn.Open();
-
-            var foods = new List<FoodDisplayView>();
-
-            using (var reader = command.ExecuteReader())
-            {
-                foods.AddRange(reader.LoadFoodsFromReader());
-            }
-
-            model.Foods = foods;
-
-            cn.Close();
+            foods.AddRange(reader.LoadFoodsFromReader());
         }
+
+        model.Foods = foods;
+
+        cn.Close();
 
         return View(model);
     }
@@ -170,8 +179,10 @@ public class SqlController : Controller
         var model = new AccountUserViewModel();
         model.SearchText = foodName;
 
-        using (var connection = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+        using (var connection = new SqlConnection())
         {
+            connection.ConnectionString = _connectionString;
+
             var command = connection.CreateCommand();
             command.CommandText = query;
 
@@ -189,7 +200,7 @@ public class SqlController : Controller
             connection.Close();
         }
 
-        return View(model);
+        return Redirect("/Home/Details/" + foodName);
     }
 
     //SQL Injection vulnerability #6
@@ -323,7 +334,7 @@ public class SqlController : Controller
     }
 
     //SQL Injection vulnerability #10
-    public IActionResult UnsafeModel_StringBuilder_Interpolation(string foodName)
+    private List<FoodDisplayView> UnsafeModel_StringBuilder_Interpolation(string foodName)
     {
         var query = new StringBuilder();
 
@@ -331,13 +342,78 @@ public class SqlController : Controller
         query.AppendLine("FROM FoodDisplayView ");
         query.AppendLine($"WHERE FoodName LIKE '%{foodName}%'");
 
+        var foods = new List<FoodDisplayView>();
+
+        using (var cn = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+        {
+            var command = cn.CreateCommand();
+            command.CommandText = query.ToString();
+
+            cn.Open();
+
+            using (var reader = command.ExecuteReader())
+            {
+                foods.AddRange(reader.LoadFoodsFromReader());
+            }
+
+            cn.Close();
+        }
+
+        return foods;
+    }
+
+    //SQL Injection via EF vulnerability #1
+    public IActionResult UnsafeModel_DbContext_FromSqlRaw(string foodName)
+    {
+        var model = new AccountUserViewModel();
+        model.SearchText = foodName;
+
+        var query = $"SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%{foodName}%'";
+
+        model.Foods = _dbContext.FoodDisplayViews.FromSqlRaw(query).ToList();
+
+        return View(model);
+    }
+
+    //SQL Injection via EF vulnerability #2
+    public IActionResult UnsafeModel_DbContext_ExecuteSqlRaw(string foodName)
+    {
+        var model = new AccountUserViewModel();
+        model.SearchText = foodName;
+
+        var query = $"SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%{foodName}%'";
+
+        int i = _dbContext.Database.ExecuteSqlRaw(query);
+
+        return View(model);
+    }
+
+    //SQL Injection via EF vulnerability #2
+    public IActionResult UnsafeModel_DbContext_ExecuteSqlRawAsync(string foodName)
+    {
+        var model = new AccountUserViewModel();
+        model.SearchText = foodName;
+
+        var query = $"SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%{foodName}%'";
+
+        int i = _dbContext.Database.ExecuteSqlRawAsync(query).Result;
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult FalsePositive([FromQuery]string foodName)
+    {
+        var query = "SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%' + @FoodName + '%'";
+
         var model = new AccountUserViewModel();
         model.SearchText = foodName;
 
         using (var cn = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
         {
             var command = cn.CreateCommand();
-            command.CommandText = query.ToString();
+            command.CommandText = query;
+            command.Parameters.AddWithValue("@FoodName", foodName);
 
             cn.Open();
 

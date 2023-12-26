@@ -1,0 +1,29 @@
+﻿@page
+@model SASTTest.Pages.AddFoodGroupModel
+@{
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <section>
+            <form id="account" method="post">
+                <h2>Add a food group</h2>
+                <hr />
+                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.FoodGroupText" class="form-control" />
+                    <label asp-for="Input.FoodGroupText" class="form-label">Food Group Text</label>
+                    <span asp-validation-for="Input.FoodGroupText" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.Price" class="form-control" />
+                    <label asp-for="Input.Price" class="form-label">Price</label>
+                    <span asp-validation-for="Input.Price" class="text-danger"></span>
+                </div>
+                <div>
+                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
+                </div>
+            </form>
+        </section>
+    </div>
+ </div>

@@ -15,35 +15,35 @@ namespace SASTTest.Controllers
         {
             var model = new AccountUserViewModel();
             model.SearchText = foodName;
-            return View(foodName);
+            return View(model);
         }
 
         public IActionResult Bold_Safe(string foodName)
         {
             var model = new AccountUserViewModel();
             model.SearchText = foodName;
-            return View(foodName);
+            return View(model);
         }
 
         public IActionResult Italic(string foodName)
         {
             var model = new AccountUserViewModel();
             model.SearchText = foodName;
-            return View(foodName);
+            return View(model);
         }
 
         public IActionResult Italic_Safe(string foodName)
         {
             var model = new AccountUserViewModel();
             model.SearchText = foodName;
-            return View(foodName);
+            return View(model);
         }
 
         public IActionResult Raw(string foodName)
         {
             var model = new AccountUserViewModel();
             model.SearchText = foodName;
-            return View(foodName);
+            return View(model);
         }
 
         public IActionResult Raw_Safe(string foodName)
@@ -58,7 +58,7 @@ namespace SASTTest.Controllers
                 model.Category = "Meats";
 
             ViewBag.Category = $"<i>{model.Category}</i>";
-            return View(foodName);
+            return View(model);
         }
     }
 }

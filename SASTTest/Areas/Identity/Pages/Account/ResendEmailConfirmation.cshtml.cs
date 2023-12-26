@@ -45,8 +45,6 @@ namespace SASTTest.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [EmailAddress]
             public string Email { get; set; }
         }
 
@@ -56,11 +54,6 @@ namespace SASTTest.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
             var user = await _userManager.FindByEmailAsync(Input.Email);
             if (user == null)
             {

@@ -31,6 +31,13 @@ namespace SASTTest
                   };
               });
 
+            builder.Services.Configure<CookiePolicyOptions>(options =>
+            {
+                options.CheckConsentNeeded = context => false;
+                options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+                options.Secure = CookieSecurePolicy.None;
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
