@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using SASTTest.EF;
 using SASTTest.Models;
 using System.Security.Claims;
+using System.Text;
 
 namespace SASTTest.Controllers;
 
@@ -168,6 +169,18 @@ public class FileController : Controller
         ViewBag.FileContents = fileContents;
 
         return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult PhysicalFileInclusion(string id)
+    {
+        return new PhysicalFileResult(_hostEnvironment.ContentRootPath + "\\wwwroot\\text\\" + id, "text/plain");
+    }
+
+    [HttpGet]
+    public IActionResult VirtualFileInclusion(string id)
+    {
+        return new VirtualFileResult("~/text/" + id, "text/plain");
     }
 
     private void SaveFileName(string fileName)

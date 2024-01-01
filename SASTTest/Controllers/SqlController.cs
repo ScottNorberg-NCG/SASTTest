@@ -409,25 +409,22 @@ public class SqlController : Controller
         var model = new AccountUserViewModel();
         model.SearchText = foodName;
 
-        using (var cn = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+        var cn = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+
+        var command = cn.CreateCommand();
+        command.CommandText = query;
+        command.Parameters.AddWithValue("@FoodName", foodName);
+
+        cn.Open();
+
+        var foods = new List<FoodDisplayView>();
+
+        using (var reader = command.ExecuteReader())
         {
-            var command = cn.CreateCommand();
-            command.CommandText = query;
-            command.Parameters.AddWithValue("@FoodName", foodName);
-
-            cn.Open();
-
-            var foods = new List<FoodDisplayView>();
-
-            using (var reader = command.ExecuteReader())
-            {
-                foods.AddRange(reader.LoadFoodsFromReader());
-            }
-
-            model.Foods = foods;
-
-            cn.Close();
+            foods.AddRange(reader.LoadFoodsFromReader());
         }
+
+        model.Foods = foods;
 
         return View(model);
     }
