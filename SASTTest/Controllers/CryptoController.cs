@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SASTTest.EF;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace SASTTest.Controllers;
 
+[Authorize]
 public class CryptoController : Controller
 {
     private readonly int _keySize = 1024;
@@ -23,6 +25,7 @@ public class CryptoController : Controller
         return View();
     }
 
+    [Authorize(Roles = "CryptoGuru")]
     public IActionResult Rsa()
     {
         using (var rsa1 = new RSACryptoServiceProvider(1024))

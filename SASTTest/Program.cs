@@ -62,6 +62,8 @@ public class Program
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
 
+        app.MapAreaControllerRoute("admin", "admin", "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+
         app.Run();
     }
 }

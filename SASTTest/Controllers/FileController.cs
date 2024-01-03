@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using NuGet.Packaging.Signing;
 using SASTTest.EF;
 using SASTTest.Models;
 using System.Security.Claims;
@@ -35,6 +37,7 @@ public class FileController : Controller
         return View();
     }
 
+    [Authorize(Roles = "FileUser")]
     [ValidateAntiForgeryToken]
     [HttpPost]
     public IActionResult SafeFileUpload(SafeFileUploadViewModel model)
@@ -129,6 +132,7 @@ public class FileController : Controller
     [HttpPost]
     public IActionResult UnsafeFileUpload(IFormFile file)
     {
+        var user = _dbContext.SiteUsers.Single(u => u.UserName == HttpContext.User.Claims.Single(c => c.Type == ClaimTypes.Name).Value);
         ViewBag.Files = GetUploadedFiles();
 
         byte[] fileBytes;
@@ -143,7 +147,14 @@ public class FileController : Controller
             }
         }
 
-        SaveFileName(file.FileName);
+        var userFile = new UserFile();
+        userFile.UserID = user.UserID;
+        userFile.FileName = file.FileName;
+        userFile.FileExtension = Path.GetExtension(file.FileName);
+        userFile.FileBytes = fileBytes;
+        userFile.CreatedOn = DateTime.Now;
+        _dbContext.UserFiles.Add(userFile);
+        _dbContext.SaveChanges();
 
         var rootFolder = _hostEnvironment.ContentRootPath;
         System.IO.File.WriteAllBytes(rootFolder + "\\wwwroot\\UploadedFiles\\" + file.FileName, fileBytes);
@@ -181,11 +192,6 @@ public class FileController : Controller
     public IActionResult VirtualFileInclusion(string id)
     {
         return new VirtualFileResult("~/text/" + id, "text/plain");
-    }
-
-    private void SaveFileName(string fileName)
-    {
-        _dbContext.Database.ExecuteSqlRaw($"INSERT UnsafeFile (FileName) VALUES (@FileName)", new SqlParameter("@FileName", fileName));
     }
 
     private List<string> GetUploadedFiles()
