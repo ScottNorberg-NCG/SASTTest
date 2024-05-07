@@ -148,9 +148,6 @@ public class SqlController : Controller
     //SQL Injection vulnerability #4
     public IActionResult UnsafeModel_Format(string foodName)
     {
-        var model = new AccountUserViewModel();
-        model.SearchText = foodName;
-
         var cn = new SqlConnection(_connectionString);
         var command = cn.CreateCommand();
         command.CommandText = string.Format("SELECT * FROM FoodDisplayView WHERE FoodName LIKE '%{0}%'", foodName);
@@ -164,11 +161,9 @@ public class SqlController : Controller
             foods.AddRange(reader.LoadFoodsFromReader());
         }
 
-        model.Foods = foods;
-
         cn.Close();
 
-        return View(model);
+        return View(foods);
     }
 
     //SQL Injection vulnerability #5

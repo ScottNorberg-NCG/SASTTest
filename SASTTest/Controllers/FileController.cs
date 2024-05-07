@@ -37,7 +37,7 @@ public class FileController : Controller
         return View();
     }
 
-    [Authorize(Roles = "FileUser")]
+    [Authorize(Roles = "FileUser, FileAdmin")]
     [ValidateAntiForgeryToken]
     [HttpPost]
     public IActionResult SafeFileUpload(SafeFileUploadViewModel model)

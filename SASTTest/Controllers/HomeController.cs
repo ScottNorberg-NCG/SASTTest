@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SASTTest.EF;
 using SASTTest.Models;
 using System.Diagnostics;
@@ -68,6 +69,50 @@ public class HomeController : Controller
         Response.Cookies.Append("CookieName", "Alex", options);
 
         return View("Index");
+    }
+
+    [HttpGet]
+    public IActionResult ReturnDataViaModelAndView_Contains()
+    {
+        var model = new AccountUserViewModel();
+        model.SearchText = "(None)";
+        return View(model);
+    }
+
+    //Not new vulnerability - uses ExecSQL
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ReturnDataViaModelAndView_Contains([FromForm]string foodName, [FromForm]string foodGroup)
+    {
+        if (!ModelState.IsValid)
+            return View();
+
+        var model = new AccountUserViewModel();
+        model.SearchText = $"Food Name: {foodName}, Food Group: {foodGroup}";
+        model.Foods = _dbContext.FoodDisplayViews.Where(f => f.FoodName.Contains(foodName) && f.FoodGroup.Contains(foodGroup)).ToList();
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult ReturnDataViaModelAndView_Equals()
+    {
+        var model = new AccountUserViewModel();
+        model.SearchText = "(None)";
+        return View(model);
+    }
+
+    //Not new vulnerability - uses ExecSQL
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ReturnDataViaModelAndView_Equals([FromForm] string foodName, [FromForm] string foodGroup)
+    {
+        if (!ModelState.IsValid)
+            return View();
+
+        var model = new AccountUserViewModel();
+        model.SearchText = $"Food Name: {foodName}, Food Group: {foodGroup}";
+        model.Foods = _dbContext.FoodDisplayViews.Where(f => f.FoodName == foodName && f.FoodGroup == foodGroup).ToList();
+        return View(model);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

@@ -56,4 +56,18 @@ public class UsersController : Controller
         _dbContext.SaveChanges();
         return View(user);
     }
+
+
+    [AllowAnonymous]
+    [HttpPost]
+    public IActionResult EditAsJson([FromBody] EditUserModel model)
+    {
+        var user = _dbContext.SiteUsers.Single(u => u.UserName == model.UserName);
+        user.FavoriteFood = model.FavoriteFood;
+        user.FavoriteFoodGroup = model.FavoriteFoodGroup;
+        user.IsAdmin = model.IsAdmin;
+
+        _dbContext.SaveChanges();
+        return Json(user);
+    }
 }
